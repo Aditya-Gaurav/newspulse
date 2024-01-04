@@ -1,20 +1,23 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: library_private_types_in_public_api, avoid_print
+
+import 'dart:html';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Import the services package
-import 'package:audioplayers/audioplayers.dart'; // Add the audioplayers package
-import 'news_data.dart'; // Import the data file
+import 'package:flutter/services.dart';
+import 'package:audioplayers/audioplayers.dart';
+import 'news_data.dart';
 import 'news_details.dart';
 
 class NewsList extends StatefulWidget {
   const NewsList({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _NewsListState createState() => _NewsListState();
 }
 
 class _NewsListState extends State<NewsList> {
+  int _selectedIndex = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -27,7 +30,7 @@ class _NewsListState extends State<NewsList> {
           News news = newsList[index];
           return Dismissible(
             key: Key(news.title),
-            direction: DismissDirection.horizontal,
+            direction: DismissDirection.endToStart,
             background: Container(
               color: Colors.green,
               alignment: Alignment.centerRight,
@@ -45,22 +48,149 @@ class _NewsListState extends State<NewsList> {
           );
         },
       ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.star),
+            label: 'Favorites',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        onTap: _onTabTapped,
+      ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 40.0,
+                    backgroundImage: AssetImage('assets/profile_image.jpg'), // Replace with your profile image
+                  ),
+                  SizedBox(height: 10.0),
+                  Text(
+                    'John Doe', // Replace with your name
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18.0,
+                    ),
+                  ),
+                  Text(
+                    'john.doe@example.com', // Replace with your email
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text('Settings'),
+              onTap: () {
+                Navigator.pop(context);
+                // Add your settings logic here
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.help),
+              title: const Text('Help'),
+              onTap: () {
+                Navigator.pop(context);
+                // Add your help logic here
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 
-  void _handleDismiss(DismissDirection direction, int index) {
-    if (direction == DismissDirection.endToStart) {
-      // Right swipe (checkmark)
-      _playSwipeSound();
+void _handleDismiss(DismissDirection direction, int index) {
+  _playSwipeSound();
+      // _showThumbsUpAnimation(context);
+  // ScaffoldMessenger.of(context)
+  //       .showSnackBar(const SnackBar(content: Text('Item dismissed')));
+          
+  if (direction == DismissDirection.endToStart) {
+    // Right swipe (checkmark)
+    print('Swiped right on ${newsList[index].title}');
+    // Add your logic for right swipe event here
+       // Right swipe (checkmark)
       print('Swiped right on ${newsList[index].title}');
-      // Add your logic for right swipe event here
-    } else if (direction == DismissDirection.startToEnd) {
-      // Left swipe (delete)
-      _playSwipeSound();
-      print('Swiped left on ${newsList[index].title}');
-      setState(() {
-        newsList.removeAt(index);
-      });
+         setState(() {
+      newsList.removeAt(index);
+    });
+       ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text('Your disliked the News')));
+      
+  } else if (direction == DismissDirection.startToEnd) {
+    // Left swipe (delete)
+    print('Swiped left on ${newsList[index].title}');
+ 
+          
+  }
+}
+
+
+
+  void _showThumbsUpAnimation(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return SizedBox(
+          height: 200.0,
+          child: Center(
+            child: AnimatedContainer(
+              duration: const Duration(seconds: 1),
+              child: const Icon(
+                Icons.thumb_up,
+                size: 80.0,
+                color: Colors.green,
+              ),
+              onEnd: () {
+                  // Wait for 2 seconds before closing the bottom sheet
+              Future.delayed(const Duration(seconds: 2), () {
+                Navigator.pop(context);
+              });
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+
+  void _onTabTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    // Handle bottom navigation tab tap
+    switch (index) {
+      case 0:
+        // Home tab
+        break;
+      case 1:
+        // Favorites tab
+        break;
+      case 2:
+        // Profile tab
+        break;
     }
   }
 
@@ -80,7 +210,7 @@ class NewsListItem extends StatelessWidget {
       child: InkWell(
         onTap: () {
           // Handle news item tap
-          _playTapSound();
+          // _playTapSound();
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -144,15 +274,19 @@ class NewsListItem extends StatelessWidget {
       ),
     );
   }
-
-  void _playTapSound() {
-    HapticFeedback.lightImpact(); // Use system haptic feedback for tap
-  }
 }
 
-
 void main() {
-  runApp(const MaterialApp(
-    home: NewsList(),
-  ));
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      home: NewsList(),
+    );
+  }
 }
